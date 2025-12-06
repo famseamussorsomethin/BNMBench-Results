@@ -1,0 +1,65 @@
+Prompt: How would I use ByNameModding to load the string "public string name;" from a class? The class is called "Player" and the namespace is "Game".
+
+To load a field named `name` of type `string` from the class `Game.Player` using ByNameModding (BNM), you need to use `BNM::Class` to find the class and `BNM::Field` to handle the variable.
+
+Since C# strings are managed objects, you must map the type `string` to `BNM::Structures::Mono::String *`.
+
+Here is the complete implementation:
+
+### Code Snippet
+
+```cpp
+#include <BNM/Class.hpp>
+#include <BNM/Field.hpp>
+#include <BNM/BasicMonoStructures.hpp> // Required for Mono::String
+
+// Include this if you want to use the helpful creation function CreateMonoString
+// #include <BNM/Utils.hpp> 
+
+void AccessPlayerName(void *playerInstance) {
+    // 1. Find the Class "Player" in namespace "Game"
+    // By default, BNM searches Assembly-CSharp.dll or currently loaded images.
+    auto playerClass = BNM::Class("Game", "Player");
+
+    // 2. Get the field object
+    // We specify the type as BNM::Structures::Mono::String* because it corresponds to C# 'string'
+    BNM::Field<BNM::Structures::Mono::String *> nameField = playerClass.GetField("name");
+
+    // Check if we have a valid instance to read from
+    if (playerInstance) {
+        
+        // --- READING THE VALUE ---
+        
+        // Use the [] operator to associate the field with the specific instance
+        BNM::Structures::Mono::String *currentNameMono = nameField[playerInstance]();
+
+        if (currentNameMono) {
+            // Convert Mono string to C++ std::string for logging/logic
+            std::string cppName = currentNameMono->str();
+            BNM_LOG_INFO("Current Player Name: %s", cppName.c_str());
+        }
+
+        // --- WRITING THE VALUE ---
+        
+        // Create a new C# string and assign it to the field
+        nameField[playerInstance] = BNM::CreateMonoString("NewPlayerName");
+    }
+}
+```
+
+### Explanation of Steps
+
+1.  **Finding the Class**: `BNM::Class("Game", "Player")` locates the internal il2cpp class structure.
+2.  **Getting the Field**: `GetField("name")` locates the offset of the variables. We look for a pointer (`*`) to `Mono::String` because in C#/il2cpp, strings are reference types located on the heap.
+3.  **Instance Handling**: Since `public string name;` is an instance field (not `static`), you cannot access it without an existing object. You must pass a pointer to the instantiated `Player` object (usually retrieved via hooking a method like `Start` or `Update`) into the `[]` operator of the field.
+
+### Comparison: Field vs Property
+If the code in C# is defined as a property (e.g., `public string name { get; set; }`), you should use `BNM::Property` instead of `BNM::Field`:
+
+```cpp
+// If it is a Property
+BNM::Property<BNM::Structures::Mono::String *> nameProp = playerClass.GetProperty("name");
+
+// Access acts the same way
+auto val = nameProp[playerInstance]();
+```

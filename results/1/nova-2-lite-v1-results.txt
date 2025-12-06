@@ -1,0 +1,140 @@
+Prompt: How would I use ByNameModding to load the string "public string name;" from a class? The class is called "Player" and the namespace is "Game".
+
+### Using ByNameModding to Load a String Field  
+To load the string field `public string name;` from the class `Player` in the namespace `Game`, follow these steps using ByNameModding's API:
+
+---
+
+#### **Step 1: Include Required Headers**
+```cpp
+#include <BNM/Class.hpp>        // For accessing classes
+#include <BNM/Field.hpp>        // For accessing fields
+#include <BNM/BasicMonoStructures.hpp> // For Mono::String (C# string handling)
+```
+
+---
+
+#### **Step 2: Retrieve the Class and Field**
+Use `BNM::Class` to get the `Player` class, then `GetField()` to access the `name` field:
+
+```cpp
+void OnLoaded_Example() {
+    using namespace BNM;
+
+    // 1. Get the Player class from the namespace Game
+    // Use BNM_OBFUSCATE_TEMP if the game is obfuscated
+    auto playerClass = Class(
+        BNM_OBFUSCATE_TEMP("Game"),    // Namespace
+        BNM_OBFUSCATE_TEMP("Player")   // Class name
+    );
+
+    // 2. Get the 'name' field (type: Mono::String*)
+    // Use BNM_OBFUSCATE_TEMP if the field is obfuscated
+    auto nameField = playerClass.GetField<Mono::String*>(
+        BNM_OBFUSCATE_TEMP("name") // Field name
+    );
+}
+```
+
+---
+
+#### **Step 3: Access the Field Value from an Instance**
+To **read** the value, you need an instance of `Player`. Here’s how to do it:
+
+```cpp
+// Assume you have a pointer to a Player instance (e.g., from GameObject)
+void* playerInstance = ...; // Replace with your logic to get a Player object
+
+// Get the current value of 'name'
+Mono::String* name = nameField[playerInstance](); 
+
+// Convert to std::string (optional)
+std::string nameStr = name->str().c_str();
+
+BNM_LOG_INFO("Player name: %s", nameStr.c_str());
+```
+
+---
+
+#### **Step 4: Handle Obfuscation (If Applicable)**
+If the game uses obfuscation (common in il2cpp games), replace `BNM_OBFUSCATE_TEMP` with the actual obfuscated names. For example:
+
+```cpp
+// Example with obfuscation (replace with actual obfuscated names)
+auto playerClass = Class(
+    BNM_OBFUSCATE_TEMP("aBcDeF"), // Obfuscated namespace
+    BNM_OBFUSCATE_TEMP("XyZ123")  // Obfuscated class name
+);
+
+auto nameField = playerClass.GetField<Mono::String*>(
+    BNM_OBFUSCATE_TEMP("pQrsT") // Obfuscated field name
+);
+```
+
+---
+
+#### **Full Example**
+```cpp
+#include <BNM/Class.hpp>
+#include <BNM/Field.hpp>
+#include <BNM/BasicMonoStructures.hpp>
+
+void OnLoaded_Example() {
+    using namespace BNM;
+
+    // Get the Player class
+    auto playerClass = Class(
+        BNM_OBFUSCATE_TEMP("Game"), 
+        BNM_OBFUSCATE_TEMP("Player")
+    );
+
+    // Get the 'name' field
+    auto nameField = playerClass.GetField<Mono::String*>(BNM_OBFUSCATE_TEMP("name"));
+
+    // --- Get a Player instance (example: find via GameObject) ---
+    // This is game-specific! Below is a pseudo-example:
+    auto gameObjectClass = Class("UnityEngine", "GameObject");
+    auto findObjectOfType = gameObjectClass.GetMethod("FindObjectOfType", 1);
+    void* playerGO = findObjectOfType.Call<void*>(BNM::Defaults::Get<BNM::UnityEngine::Object*>());
+
+    // Cast to Player (assuming Player inherits from MonoBehaviour)
+    void* playerInstance = playerGO;
+
+    // --- Read the 'name' field ---
+    Mono::String* name = nameField[playerInstance]();
+    BNM_LOG_INFO("Player name: %s", name->str().c_str());
+}
+```
+
+---
+
+### Key Notes
+1. **Obfuscation**:  
+   Use `BNM_OBFUSCATE_TEMP("OriginalName")` if the game is obfuscated. You can find obfuscated names via tools like [IL2CPP Dumper](https://github.com/Perfare/IL2CPP-Dumper) or [Il2CppInspector](https://github.com/Perfare/Il2CppInspector).
+
+2. **Instance Retrieval**:  
+   How you get `playerInstance` depends on your game. Common methods:
+   - `GameObject::FindObjectOfType(Player)`  
+   - Searching via `GameObject::FindWithTag("Player")`  
+   - Using `Object::FindObjectOfType`  
+
+3. **Error Handling**:  
+   Always check if pointers are valid before dereferencing:
+   ```cpp
+   if (playerInstance && nameField) {
+       // Safe to access
+   }
+   ```
+
+4. **Writing Values**:  
+   To **set** the `name` field:
+   ```cpp
+   nameField[playerInstance] = BNM::CreateMonoString("NewPlayerName");
+   ```
+
+---
+
+### References
+- **`BNM::Class`**: [Class Management Docs](AdvancedAPI.html#classes-management)  
+- **`BNM::Field`**: [Basics Docs](Basics.html#field)  
+- **Mono Strings**: [Basic Mono Structures](Basics.html#mono-structures)

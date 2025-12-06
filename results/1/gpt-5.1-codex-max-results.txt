@@ -1,0 +1,27 @@
+Prompt: How would I use ByNameModding to load the string "public string name;" from a class? The class is called "Player" and the namespace is "Game".
+
+Use a `Field` for the instance field and the `Class` helper to look up `Game.Player`. Then read the `Mono::String*` and, if you want, convert it to `std::string`:
+
+```cpp
+#include <BNM/Class.hpp>
+#include <BNM/Field.hpp>
+#include <BNM/BasicMonoStructures.hpp>
+
+using namespace BNM;
+
+// 1) Find the class (Assembly-CSharp.dll is implicit if you omit the image)
+Class playerClass = Class("Game", "Player" /*, Image("Assembly-CSharp.dll") */);
+
+// 2) Get the field
+Field<Structures::Mono::String*> nameField = playerClass.GetField("name");
+
+// 3) Read it from a Player instance
+void* playerInstance = /* pointer to your Player object */;
+auto monoName = nameField[playerInstance];          // Mono::String*
+std::string cppName = monoName ? monoName->str() : "";
+
+// (optional) Set it
+// nameField[playerInstance] = BNM::CreateMonoString("NewName");
+```
+
+This loads the `public string name;` field from the `Game.Player` class.

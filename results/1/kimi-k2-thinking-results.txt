@@ -1,0 +1,83 @@
+Prompt: How would I use ByNameModding to load the string "public string name;" from a class? The class is called "Player" and the namespace is "Game".
+
+To load a string field from a class using ByNameModding, you need to use the `BNM::Field` template with `Mono::String*` as the type. Here's a complete example:
+
+```cpp
+#include <BNM/Loading.hpp>
+#include <BNM/Class.hpp>
+#include <BNM/Field.hpp>
+#include <BNM/BasicMonoStructures.hpp>
+
+// Use this to avoid writing BNM::Structures::Mono::String
+using namespace BNM::Structures;
+
+// Declare the field variable
+BNM::Field<Mono::String*> playerNameField;
+
+void OnLoaded() {
+    using namespace BNM;
+    
+    // Get the Player class from the Game namespace
+    auto playerClass = Class(
+        BNM_OBFUSCATE("Game"),      // Namespace
+        BNM_OBFUSCATE("Player")     // Class name
+        // You can add the DLL name as third parameter if needed, e.g., BNM_OBFUSCATE("Assembly-CSharp.dll")
+    );
+    
+    // Get the 'name' field from the Player class
+    playerNameField = playerClass.GetField(BNM_OBFUSCATE("name"));
+}
+
+// Example usage: Reading the field value from a player instance
+void ReadPlayerName(void* playerInstance) {
+    if (!playerInstance) {
+        BNM_LOG_ERROR("Player instance is null!");
+        return;
+    }
+    
+    // Get the string value from the field (field[instance]())
+    Mono::String* nameValue = playerNameField[playerInstance]();
+    
+    if (!nameValue) {
+        BNM_LOG_ERROR("Name field is null!");
+        return;
+    }
+    
+    // Convert Mono::String* to std::string
+    std::string nameString = nameValue->str();
+    
+    BNM_LOG_INFO("Player name: %s", nameString.c_str());
+}
+
+// In your JNI_OnLoad or entry point
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
+    JNIEnv* env;
+    vm->GetEnv((void**)&env, JNI_VERSION_1_6);
+    
+    // Load BNM
+    BNM::Loading::TryLoadByJNI(env);
+    
+    // Register the load event
+    BNM::Loading::AddOnLoadedEvent(OnLoaded);
+    
+    return JNI_VERSION_1_6;
+}
+```
+
+### Key Points:
+
+1. **Include the necessary headers**: `<BNM/Class.hpp>`, `<BNM/Field.hpp>`, and `<BNM/BasicMonoStructures.hpp>`
+
+2. **Use `Mono::String*`**: C# strings are represented as `Mono::String*` in BNM
+
+3. **Get the class**: Use `BNM::Class(namespace, className)` to find the class
+
+4. **Get the field**: Use `class.GetField("fieldName")` to retrieve the field descriptor
+
+5. **Read from instance**: Use `field[instance]()` to get the field value from a specific instance
+
+6. **Convert to C++ string**: Use `Mono::String::str()` method to convert to `std::string`
+
+7. **Obfuscation**: Use `BNM_OBFUSCATE()` macro to obfuscate string literals in your compiled binary
+
+8. **Wait for load**: Always ensure BNM is fully loaded before using its APIs by using `AddOnLoadedEvent()`

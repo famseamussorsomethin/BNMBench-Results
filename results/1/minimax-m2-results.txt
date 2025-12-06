@@ -1,0 +1,62 @@
+Prompt: How would I use ByNameModding to load the string "public string name;" from a class? The class is called "Player" and the namespace is "Game".
+
+
+
+To load the string field `name` from the `Player` class in the `Game` namespace using ByNameModding, you would follow this pattern:
+
+```cpp
+#include <BNM/Class.hpp>
+#include <BNM/Field.hpp>
+#include <BNM/BasicMonoStructures.hpp>
+
+void Example() {
+    using namespace BNM;
+    
+    // Get the Player class from the Game namespace
+    auto playerClass = Class("Game", "Player");
+    
+    // Get the name field (System.String type)
+    BNM::Field<Structures::Mono::String*> nameField = playerClass.GetField("name");
+    
+    // Example: Get an instance of Player class (you'll need to get this from somewhere in your code)
+    void* playerInstance = ...; // Get your Player instance
+    
+    // Access the name field
+    auto playerName = nameField[playerInstance]();
+    
+    // Convert to std::string for logging or manipulation
+    std::string nameString = playerName->str();
+    
+    BNM_LOG_INFO("Player name: %s", nameString.c_str());
+}
+```
+
+## Key points:
+
+1. **Class Access**: Use `BNM::Class("Game", "Player")` to get the Player class
+2. **Field Type**: The field will be of type `Structures::Mono::String*` (C# System.String)
+3. **Field Access**: Use the `[instance]()` operator to get the field value
+4. **String Conversion**: Use `->str()` to convert Mono::String to std::string
+
+## Alternative approaches:
+
+**If you need to set the field:**
+```cpp
+nameField[playerInstance] = BNM::CreateMonoString("NewPlayerName");
+```
+
+**For static fields:**
+```cpp
+// If 'name' were static
+auto staticName = nameField();
+staticName = BNM::CreateMonoString("StaticPlayerName");
+```
+
+**With more explicit typing:**
+```cpp
+BNM::Field<Mono::String*> nameField = playerClass.GetField("name");
+// or
+BNM::Field<BNM::IL2CPP::Il2CppString*> nameField = playerClass.GetField("name");
+```
+
+Remember to ensure the Player class is loaded/initialized before accessing its fields, and handle any potential null pointer cases appropriately.
