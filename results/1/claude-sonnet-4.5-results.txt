@@ -1,0 +1,52 @@
+Prompt: How would I use ByNameModding to load the string "public string name;" from a class? The class is called "Player" and the namespace is "Game".
+
+Based on the documentation, here's how to get the `name` field from the `Player` class:
+
+```cpp
+#include <BNM/Class.hpp>
+#include <BNM/Field.hpp>
+#include <BNM/BasicMonoStructures.hpp>
+
+using namespace BNM::Structures;
+
+// Get the Player class
+auto PlayerClass = BNM::Class("Game", "Player");
+
+// Get the name field
+BNM::Field<Mono::String*> nameField = PlayerClass.GetField("name");
+
+// To get the value from an instance:
+void* playerInstance = ...; // Your player instance
+
+// Method 1: Using operator[]
+Mono::String* playerName = nameField[playerInstance];
+
+// Method 2: Using SetInstance then Get
+nameField.SetInstance(playerInstance);
+Mono::String* playerName = nameField.Get();
+// or
+auto playerName = nameField();
+
+// Convert to std::string if needed
+std::string playerNameStr = playerName->str();
+```
+
+If you need to **set** the value:
+
+```cpp
+// Create a new mono string
+auto newName = BNM::CreateMonoString("NewPlayerName");
+
+// Method 1: Using operator[]
+nameField[playerInstance] = newName;
+
+// Method 2: Using SetInstance then Set
+nameField.SetInstance(playerInstance);
+nameField.Set(newName);
+```
+
+**Key points:**
+- Use `BNM::Field<Mono::String*>` for C# string fields
+- Use `GetField("name")` to retrieve the field by name
+- Use `operator[]` or `SetInstance()` to specify which object instance to read from
+- Use `->str()` to convert `Mono::String*` to `std::string`
