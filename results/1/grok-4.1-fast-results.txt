@@ -1,0 +1,58 @@
+Prompt: How would I use ByNameModding to load the string "public string name;" from a class? The class is called "Player" and the namespace is "Game".
+
+```cpp
+#include <BNM/Class.hpp>
+#include <BNM/Field.hpp>
+#include <BNM/Structures.hpp>  // For BNM::Structures::Mono::String
+#include <BNM/Logging.hpp>    // For BNM_LOG_INFO (optional, for logging)
+
+// Using namespace for convenience (Mono::String)
+using namespace BNM::Structures;
+
+// 1. Find the Player class in the "Game" namespace
+BNM::Class playerClass = BNM::Class("Game", "Player");
+
+// 2. Get the "name" field (public string name;)
+BNM::Field<Mono::String *> nameField = playerClass.GetField("name");
+
+// 3. Example usage: Read the field value from a Player *instance
+//    (You need to obtain a valid `playerInstance` pointer, e.g., via hooking,
+//     GameObject.GetComponent<Player>(), or field/property access.)
+void *playerInstance = /* your Player instance pointer, e.g., from a hook or GetComponent */ nullptr;
+
+if (playerInstance != nullptr) {
+    // Read the string value (operator[] sets instance temporarily)
+    Mono::String *nameValue = nameField[playerInstance]();
+    
+    // Alternative: nameField.SetInstance(playerInstance); Mono::String *nameValue = nameField();
+    
+    if (nameValue != nullptr) {
+        // Convert Mono::String to std::string
+        std::string playerName = nameValue->str();
+        
+        // Log or use the string
+        BNM_LOG_INFO("Player name: %s", playerName.c_str());
+    }
+}
+
+// 4. Example: Write/Set a new value
+// nameField[playerInstance]() = BNM::CreateMonoString("NewPlayerName");
+```
+
+### Key Notes:
+- **Class Lookup**: `BNM::Class("Game", "Player")` searches across loaded images (e.g., `Assembly-CSharp.dll`). Specify the image if needed: `BNM::Class("Game", "Player", BNM::Image("Assembly-CSharp.dll"))`.
+- **Field Type**: `string` in C# maps to `BNM::Structures::Mono::String *` (preferred over raw `Il2CppString *`).
+- **Instance Pointer**: You **must** have a valid `Player` instance:
+  | Method | Example |
+  |--------|---------|
+  | **Hook a method** (e.g., `Player.Start()`) | Use `InvokeHook` or `HOOK` to capture `this`. See [Basics](Basics.html#MainAPI) / [Example 01](old_example_01_basics.html). |
+  | **GameObject.GetComponent** | `auto playerComp = gameObjectClass.GetMethod("GetComponent", 0).GetGeneric({playerClass})[gameObjectInstance]();` |
+  | **Field/Property** | Traverse via parent classes or lists (e.g., `FindObjectsOfType<Player>()`). |
+- **Safety**:
+  - Always check `playerInstance != nullptr`.
+  - For Unity objects: `if (BNM::UnityEngine::IsUnityObjectAlive((BNM::UnityEngine::Object *)playerInstance))`.
+  - Use `BNM_try / BNM_catch` for exceptions (see [Exceptions](Basics.html#Exceptions)).
+- **Obfuscation** (recommended for production): Wrap strings in `BNM_OBFUSCATE("Game")`, `BNM_OBFUSCATE("Player")`, `BNM_OBFUSCATE("name")`.
+- **Setup**: Ensure BNM is loaded (see [Getting Started](GettingStarted.html)) and call this in `OnLoaded` callback or hook.
+
+This accesses **the value** of `"name"` (e.g., `"JohnDoe"`). If you meant the **field metadata** (e.g., name/type), use `nameField.Name()` or `nameField.Type().ClassName()`. Ask for more details if needed!
