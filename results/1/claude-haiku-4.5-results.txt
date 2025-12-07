@@ -1,0 +1,44 @@
+Prompt: How would I use ByNameModding to load the string "public string name;" from a class? The class is called "Player" and the namespace is "Game".
+
+# Loading a String Field with ByNameModding
+
+To load and access the string field `public string name;` from the `Player` class in the `Game` namespace, you would use the following approach:
+
+```cpp
+#include <BNM/Class.hpp>
+#include <BNM/Field.hpp>
+#include <BNM/BasicMonoStructures.hpp>
+
+using namespace BNM::Structures; // For Mono::String
+
+// Get the Player class
+auto PlayerClass = BNM::Class("Game", "Player");
+
+// Get the "name" field as a string type
+BNM::Field<Mono::String*> nameField = PlayerClass.GetField("name");
+
+// To get the value from an instance:
+void* playerInstance = ...; // Your Player instance
+
+// Method 1: Using the [] operator
+Mono::String* playerName = nameField[playerInstance];
+
+// Method 2: Using SetInstance and then calling
+nameField.SetInstance(playerInstance);
+Mono::String* playerName = nameField();
+
+// Convert to std::string if needed
+std::string nameStr = playerName->str();
+```
+
+## Key Points:
+
+1. **Use `BNM::Field<Mono::String*>`** - This is the correct type for C# string fields in BNM
+2. **`GetField("name")`** - Gets the field by its name as it appears in C#
+3. **`[playerInstance]`** - Sets the instance and returns the value in one operation
+4. **`->str()`** - Converts the Mono::String to a std::string if needed
+
+If you want to also set the value, you can do:
+```cpp
+nameField[playerInstance] = BNM::CreateMonoString("NewName");
+```

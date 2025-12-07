@@ -14,7 +14,7 @@
     
  5. Claude Opus 4.5: Opus 4.5 did the task very well and included everything perfectly, however it failed to call the playerNameField to get the value and instead only put in the instance.
  
- 6. Claude Sonnet 4.5: Sonnet 4.5 did the task very well and structured the code nicely, however it also failed to call the field for its value. However, it did provide other methods which use .SetInstance and .Get which do work. It provided 'Method 1' and 'Method 2' for getting and setting the fields value. Similar quality to Opus 4.5.
+ 6. Claude Sonnet AND Haiku 4.5 (both results were basically the same): Sonnet AND Haiku 4.5 did the task very well and structured the code nicely, however it also failed to call the field for its value. However, it did provide other methods which use .SetInstance and then called the field for its value which does work. It provided method(s) for getting and setting the fields value. Similar quality to Opus 4.5 but Opus had better structuring.
     
  7. GPT 5.1 Codex Max: 5.1 Codex Max did nearly the same as Opus and Sonnet 4.5 with the same misinput of not calling the field for its value, however it sent the code in steps and it was much more simple. It did however show how you would use Image for loading a class that is in a different assembly.
     
