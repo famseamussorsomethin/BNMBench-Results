@@ -1,0 +1,64 @@
+Prompt: How would I use ByNameModding to load the string "public string name;" from a class? The class is called "Player" and the namespace is "Game".
+
+# Getting a String Field with BNM
+
+Based on the documentation, here's how to get the `name` string field from the `Player` class in the `Game` namespace:
+
+```cpp
+#include <BNM/Class.hpp>
+#include <BNM/Field.hpp>
+#include <BNM/BasicMonoStructures.hpp>
+
+using namespace BNM::Structures;
+
+// Declare the class and field
+BNM::Class PlayerClass;
+BNM::Field<Mono::String *> nameField;
+
+// Initialize in your OnLoaded callback
+void OnLoaded() {
+    // Get the Player class from "Game" namespace
+    PlayerClass = BNM::Class("Game", "Player");
+    
+    // Get the "name" field
+    nameField = PlayerClass.GetField("name");
+}
+
+// Usage with a Player instance
+void Example(void *playerInstance) {
+    // Get the field value
+    Mono::String *name = nameField[playerInstance]();
+    
+    // Convert to std::string
+    std::string nameStr = name->str();
+    
+    BNM_LOG_INFO("Player name: %s", nameStr.c_str());
+}
+```
+
+## Setting the Field
+
+To modify the name:
+
+```cpp
+void SetPlayerName(void *playerInstance) {
+    // Create a new mono string and set it
+    nameField[playerInstance] = BNM::CreateMonoString("NewName");
+}
+```
+
+## Alternative Syntax
+
+You can also use these equivalent approaches:
+
+```cpp
+// Using operator ->*
+Mono::String *name = playerInstance->*nameField;
+
+// Using operator >>
+Mono::String *name = playerInstance >> nameField;
+
+// Setting instance first
+nameField.SetInstance(playerInstance);
+Mono::String *name = nameField();  // or nameField.Get()
+```
